@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>D&D Stat Tracker</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a202c; /* Dark background */
+            color: #e2e8f0; /* Light text */
+        }
+        /* Hide number input arrows */
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+        /* Custom scrollbar for better aesthetics */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #2d3748;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4a5568;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #6b7280;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <div class="max-w-7xl mx-auto bg-gray-800 rounded-lg shadow-xl p-6 md:p-8">
+        <h1 class="text-4xl font-bold text-center mb-8 text-indigo-400">D&D Stat Tracker</h1>
+
+        <!-- Players Section -->
+        <div class="mb-10">
+            <h2 class="text-3xl font-semibold mb-6 text-indigo-300">Players</h2>
+            <div id="players-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Player cards will be injected here by JavaScript -->
+            </div>
+            <button id="add-player-btn" class="mt-6 w-full py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg shadow-md transition duration-200">
+                Add New Player
+            </button>
+        </div>
+
+        <hr class="border-gray-700 my-10">
+
+        <!-- Dice Roller Section -->
+        <div class="mb-10">
+            <h2 class="text-3xl font-semibold mb-6 text-indigo-300">Dice Roller</h2>
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-6">
+                <button class="dice-btn w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-md transition duration-200" data-dice="d4">Roll d4</button>
+                <button class="dice-btn w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-md transition duration-200" data-dice="d6">Roll d6</button>
+                <button class="dice-btn w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-md transition duration-200" data-dice="d8">Roll d8</button>
+                <button class="dice-btn w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-md transition duration-200" data-dice="d10">Roll d10</button>
+                <button class="dice-btn w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-md transition duration-200" data-dice="d12">Roll d12</button>
+                <button class="dice-btn w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-md transition duration-200" data-dice="d20">Roll d20</button>
+                <button class="dice-btn w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-md transition duration-200" data-dice="d100">Roll d100</button>
+            </div>
+            <div class="flex flex-col sm:flex-row gap-4 mb-6">
+                <input type="text" id="custom-dice-input" placeholder="e.g., 2d6+3" class="flex-grow p-3 rounded-lg bg-gray-700 border border-gray-600 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <button id="roll-custom-btn" class="w-full sm:w-auto py-3 px-6 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-lg shadow-md transition duration-200">
+                    Roll Custom
+                </button>
+            </div>
+            <div id="dice-results" class="bg-gray-700 p-4 rounded-lg text-lg text-center font-mono">
+                Roll results will appear here.
+            </div>
+        </div>
+
+        <hr class="border-gray-700 my-10">
+
+        <!-- Enemy HP Tracker Section -->
+        <div>
+            <h2 class="text-3xl font-semibold mb-6 text-indigo-300">Enemy HP Tracker</h2>
+            <div id="enemies-container" class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <!-- Enemy cards will be injected here by JavaScript -->
+            </div>
+            <button id="add-enemy-btn" class="w-full py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg shadow-md transition duration-200">
+                Add New Enemy
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Unique ID for local storage to prevent conflicts
+        const APP_STORAGE_KEY = 'dnd-stat-tracker-data';
+
+        // Helper to generate unique IDs
+        const generateId = () => Math.random().toString(36).substr(2, 9);
+
+        // Initial data structure
+        let appData = {
+            players: [],
+            enemies: []
+        };
+
+        // --- Data Persistence Functions ---
+        const loadData = () => {
+            const storedData = localStorage.getItem(APP_STORAGE_KEY);
+            if (storedData) {
+                appData = JSON.parse(storedData);
+            }
+        };
+
+        const saveData = () => {
+            localStorage.setItem(APP_STORAGE_KEY, JSON.stringify(appData));
+        };
+
+        // --- Player Management ---
+        const playersContainer = document.getElementById('players-container');
+        const addPlayerBtn = document.getElementById('add-player-btn');
+
+        const createPlayerCard = (player) => {
+            const playerCard = document.createElement('div');
+            playerCard.id = `player-${player.id}`;
+            playerCard.className = 'bg-gray-700 p-6 rounded-lg shadow-lg border border-gray-600 flex flex-col space-y-4';
+
+            playerCard.innerHTML = `
+                <div class="flex items-center justify-between mb-4">
+                    <input type="text" value="${player.name}" data-player-id="${player.id}" data-field="name"
+                           class="player-name-input text-2xl font-bold bg-transparent border-b border-gray-500 pb-1 focus:outline-none focus:border-indigo-400 w-full mr-2"
+                           placeholder="Player Name">
+                    <button class="remove-player-btn text-red-400 hover:text-red-500 text-lg font-bold transition duration-200" data-player-id="${player.id}">
+                        &times;
+                    </button>
+                </div>
+
+                <!-- Stats -->
+                <div class="grid grid-cols-2 gap-3">
+                    ${Object.keys(player.stats).map(stat => `
+                        <div class="flex items-center">
+                            <label class="uppercase text-sm font-semibold flex-shrink-0 w-1/3 min-w-[40px]">${stat}:</label>
+                            <input type="number" value="${player.stats[stat]}" data-player-id="${player.id}" data-field="stats.${stat}"
+                                   class="player-input flex-grow p-2 bg-gray-600 rounded-md border border-gray-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 text-center min-w-0">
+                        </div>
+                    `).join('')}
+                </div>
+
+                <!-- HP, AC, Initiative, Speed - Now on separate lines for better mobile fit -->
+                <div class="flex flex-col gap-3">
+                    <div class="flex items-center">
+                        <label class="text-sm font-semibold flex-shrink-0 w-1/4 min-w-[30px] mr-2">HP:</label>
+                        <input type="number" value="${player.hp.current}" data-player-id="${player.id}" data-field="hp.current"
+                               class="player-input flex-grow p-2 bg-gray-600 rounded-md border border-gray-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 text-center min-w-0 max-w-[80px]">
+                        <span class="mx-1 flex-shrink-0">/</span>
+                        <input type="number" value="${player.hp.max}" data-player-id="${player.id}" data-field="hp.max"
+                               class="player-input flex-grow p-2 bg-gray-600 rounded-md border border-gray-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 text-center min-w-0 max-w-[80px]">
+                    </div>
+                    <div class="flex items-center">
+                        <label class="text-sm font-semibold flex-shrink-0 w-1/3 min-w-[30px] mr-2">AC:</label>
+                        <input type="number" value="${player.ac}" data-player-id="${player.id}" data-field="ac"
+                               class="player-input flex-grow p-2 bg-gray-600 rounded-md border border-gray-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 text-center min-w-0 max-w-[80px]">
+                    </div>
+                    <div class="flex items-center">
+                        <label class="text-sm font-semibold flex-shrink-0 w-1/3 min-w-[30px] mr-2">Init:</label>
+                        <input type="number" value="${player.initiative}" data-player-id="${player.id}" data-field="initiative"
+                               class="player-input flex-grow p-2 bg-gray-600 rounded-md border border-gray-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 text-center min-w-0 max-w-[80px]">
+                    </div>
+                    <div class="flex items-center">
+                        <label class="text-sm font-semibold flex-shrink-0 w-1/3 min-w-[30px] mr-2">Speed:</label>
+                        <input type="number" value="${player.speed}" data-player-id="${player.id}" data-field="speed"
+                               class="player-input flex-grow p-2 bg-gray-600 rounded-md border border-gray-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 text-center min-w-0 max-w-[80px]">
+                    </div>
+                </div>
+
+                <!-- Spell Slots -->
+                <div class="mt-4 border-t border-gray-600 pt-4">
+                    <h3 class="text-xl font-semibold mb-3 text-indigo-200">Spell Slots</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">
+                        ${Object.keys(player.spellSlots).map(level => `
+                            <div class="flex items-center justify-between">
+                                <label class="text-sm font-semibold flex-shrink-0 mr-2">${level.replace('level', '')}${level === 'level1' ? 'st' : level === 'level2' ? 'nd' : level === 'level3' ? 'rd' : 'th'} Level:</label>
+                                <div class="flex items-center flex-grow justify-end">
+                                    <button class="spell-slot-btn w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-sm flex-shrink-0 mr-1 transition duration-200" data-player-id="${player.id}" data-level="${level}" data-action="decrement">-</button>
+                                    <input type="number" value="${player.spellSlots[level].current}" data-player-id="${player.id}" data-field="spellSlots.${level}.current"
+                                           class="player-input w-10 p-1 bg-gray-600 rounded-md border border-gray-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 text-center text-sm flex-shrink-0">
+                                    <span class="mx-1 flex-shrink-0">/</span>
+                                    <input type="number" value="${player.spellSlots[level].max}" data-player-id="${player.id}" data-field="spellSlots.${level}.max"
+                                           class="player-input w-10 p-1 bg-gray-600 rounded-md border border-gray-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 text-center text-sm flex-shrink-0">
+                                    <button class="spell-slot-btn w-6 h-6 bg-green-500 hover:bg-green-600 text-white rounded-full flex items-center justify-center text-sm ml-1 flex-shrink-0 transition duration-200" data-player-id="${player.id}" data-level="${level}" data-action="increment">+</button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            return playerCard;
+        };
+
+        const addPlayer = () => {
+            const newPlayer = {
+                id: generateId(),
+                name: `New Player ${appData.players.length + 1}`,
+                stats: { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 },
+                hp: { current: 20, max: 20 },
+                ac: 10,
+                initiative: 0,
+                speed: 30,
+                spellSlots: {
+                    level1: { current: 0, max: 0 },
+                    level2: { current: 0, max: 0 },
+                    level3: { current: 0, max: 0 },
+                    level4: { current: 0, max: 0 },
+                    level5: { current: 0, max: 0 },
+                    level6: { current: 0, max: 0 },
+                    level7: { current: 0, max: 0 },
+                    level8: { current: 0, max: 0 },
+                    level9: { current: 0, max: 0 },
+                }
+            };
+            appData.players.push(newPlayer);
+            saveData();
+            renderPlayers();
+        };
+
+        const updatePlayer = (playerId, field, value) => {
+            const playerIndex = appData.players.findIndex(p => p.id === playerId);
+            if (playerIndex > -1) {
+                const parts = field.split('.');
+                let current = appData.players[playerIndex];
+                for (let i = 0; i < parts.length - 1; i++) {
+                    if (!current[parts[i]]) current[parts[i]] = {}; // Create if doesn't exist
+                    current = current[parts[i]];
+                }
+                current[parts[parts.length - 1]] = value;
+                saveData();
+            }
+        };
+
+        const removePlayer = (playerId) => {
+            appData.players = appData.players.filter(p => p.id !== playerId);
+            saveData();
+            renderPlayers();
+        };
+
+        const renderPlayers = () => {
+            playersContainer.innerHTML = '';
+            appData.players.forEach(player => {
+                playersContainer.appendChild(createPlayerCard(player));
+            });
+        };
+
+        // --- Dice Roller ---
+        const diceResults = document.getElementById('dice-results');
+        const customDiceInput = document.getElementById('custom-dice-input');
+        const rollCustomBtn = document.getElementById('roll-custom-btn');
+
+        const rollDice = (diceType) => {
+            let result;
+            switch (diceType) {
+                case 'd4': result = Math.floor(Math.random() * 4) + 1; break;
+                case 'd6': result = Math.floor(Math.random() * 6) + 1; break;
+                case 'd8': result = Math.floor(Math.random() * 8) + 1; break;
+                case 'd10': result = Math.floor(Math.random() * 10) + 1; break;
+                case 'd12': result = Math.floor(Math.random() * 12) + 1; break;
+                case 'd20': result = Math.floor(Math.random() * 20) + 1; break;
+                case 'd100': result = Math.floor(Math.random() * 100) + 1; break;
+                default: result = 0;
+            }
+            return result;
+        };
+
+        const parseAndRollCustomDice = (input) => {
+            const match = input.toLowerCase().match(/^(\d*)d(\d+)([+-]\d+)?$/);
+            if (!match) {
+                diceResults.textContent = 'Invalid format. Use like: 2d6+3 or d20';
+                return;
+            }
+
+            const numDice = parseInt(match[1] || '1', 10);
+            const diceSides = parseInt(match[2], 10);
+            const modifier = parseInt(match[3] || '0', 10);
+
+            if (isNaN(numDice) || isNaN(diceSides) || isNaN(modifier) || numDice <= 0 || diceSides <= 0) {
+                diceResults.textContent = 'Invalid numbers in dice roll.';
+                return;
+            }
+
+            let total = 0;
+            let rolls = [];
+            for (let i = 0; i < numDice; i++) {
+                const roll = Math.floor(Math.random() * diceSides) + 1;
+                rolls.push(roll);
+                total += roll;
+            }
+
+            const finalResult = total + modifier;
+            let resultText = `Rolling ${input}: `;
+            if (numDice > 1) {
+                resultText += `Rolls (${rolls.join(' + ')})`;
+                if (modifier !== 0) {
+                    resultText += ` ${modifier > 0 ? '+' : ''}${modifier}`;
+                }
+                resultText += ` = ${finalResult}`;
+            } else {
+                resultText += `${finalResult}`;
+            }
+            diceResults.textContent = resultText;
+        };
+
+        // --- Enemy HP Tracker ---
+        const enemiesContainer = document.getElementById('enemies-container');
+        const addEnemyBtn = document.getElementById('add-enemy-btn');
+
+        const createEnemyCard = (enemy) => {
+            const enemyCard = document.createElement('div');
+            enemyCard.id = `enemy-${enemy.id}`;
+            enemyCard.className = 'bg-gray-700 p-6 rounded-lg shadow-lg border border-gray-600 flex flex-col space-y-4';
+
+            enemyCard.innerHTML = `
+                <div class="flex items-center justify-between mb-4">
+                    <input type="text" value="${enemy.name}" data-enemy-id="${enemy.id}" data-field="name"
+                           class="enemy-name-input text-2xl font-bold bg-transparent border-b border-gray-500 pb-1 focus:outline-none focus:border-red-400 w-full mr-2"
+                           placeholder="Enemy Name">
+                    <button class="remove-enemy-btn text-red-400 hover:text-red-500 text-lg font-bold transition duration-200" data-enemy-id="${enemy.id}">
+                        &times;
+                    </button>
+                </div>
+
+                <div class="flex items-center justify-between">
+                    <label class="text-sm font-semibold flex-shrink-0 mr-2">HP:</label>
+                    <div class="flex items-center flex-grow justify-end">
+                        <button class="enemy-hp-btn w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-lg flex-shrink-0 mr-2 transition duration-200" data-enemy-id="${enemy.id}" data-action="decrement">-</button>
+                        <input type="number" value="${enemy.hp}" data-enemy-id="${enemy.id}" data-field="hp"
+                               class="enemy-input w-20 p-2 bg-gray-600 rounded-md border border-gray-500 focus:outline-none focus:ring-1 focus:ring-red-500 text-center text-lg flex-shrink-0">
+                        <button class="enemy-hp-btn w-8 h-8 bg-green-500 hover:bg-green-600 text-white rounded-full flex items-center justify-center text-lg ml-2 flex-shrink-0 transition duration-200" data-enemy-id="${enemy.id}" data-action="increment">+</button>
+                    </div>
+                </div>
+            `;
+            return enemyCard;
+        };
+
+        const addEnemy = () => {
+            const newEnemy = {
+                id: generateId(),
+                name: `New Enemy ${appData.enemies.length + 1}`,
+                hp: 10
+            };
+            appData.enemies.push(newEnemy);
+            saveData();
+            renderEnemies();
+        };
+
+        const updateEnemy = (enemyId, field, value) => {
+            const enemyIndex = appData.enemies.findIndex(e => e.id === enemyId);
+            if (enemyIndex > -1) {
+                const parts = field.split('.');
+                let current = appData.enemies[enemyIndex];
+                for (let i = 0; i < parts.length - 1; i++) {
+                    if (!current[parts[i]]) current[parts[i]] = {};
+                    current = current[parts[i]];
+                }
+                current[parts[parts.length - 1]] = value;
+                saveData();
+            }
+        };
+
+        const removeEnemy = (enemyId) => {
+            appData.enemies = appData.enemies.filter(e => e.id !== enemyId);
+            saveData();
+            renderEnemies();
+        };
+
+        const renderEnemies = () => {
+            enemiesContainer.innerHTML = '';
+            appData.enemies.forEach(enemy => {
+                enemiesContainer.appendChild(createEnemyCard(enemy));
+            });
+        };
+
+        // --- Event Listeners ---
+        document.addEventListener('DOMContentLoaded', () => {
+            loadData();
+            renderPlayers();
+            renderEnemies();
+        });
+
+        // Player section event delegation
+        playersContainer.addEventListener('input', (event) => {
+            const target = event.target;
+            const playerId = target.dataset.playerId;
+            const field = target.dataset.field;
+            if (playerId && field) {
+                let value = target.value;
+                if (target.type === 'number') {
+                    value = parseInt(value, 10) || 0; // Ensure number, default to 0
+                }
+                updatePlayer(playerId, field, value);
+            }
+        });
+
+        playersContainer.addEventListener('click', (event) => {
+            const target = event.target;
+            if (target.classList.contains('remove-player-btn')) {
+                const playerId = target.dataset.playerId;
+                if (playerId) {
+                    removePlayer(playerId);
+                }
+            } else if (target.classList.contains('spell-slot-btn')) {
+                const playerId = target.dataset.playerId;
+                const level = target.dataset.level;
+                const action = target.dataset.action;
+                if (playerId && level && action) {
+                    const player = appData.players.find(p => p.id === playerId);
+                    if (player) {
+                        if (action === 'increment') {
+                            if (player.spellSlots[level].current < player.spellSlots[level].max) {
+                                player.spellSlots[level].current++;
+                            }
+                        } else if (action === 'decrement') {
+                            if (player.spellSlots[level].current > 0) {
+                                player.spellSlots[level].current--;
+                            }
+                        }
+                        saveData();
+                        renderPlayers(); // Re-render to update the display
+                    }
+                }
+            }
+        });
+
+        addPlayerBtn.addEventListener('click', addPlayer);
+
+        // Dice roller event listeners
+        document.querySelectorAll('.dice-btn').forEach(button => {
+            button.addEventListener('click', (event) => {
+                const diceType = event.target.dataset.dice;
+                const result = rollDice(diceType);
+                diceResults.textContent = `Rolled ${diceType}: ${result}`;
+            });
+        });
+
+        rollCustomBtn.addEventListener('click', () => {
+            parseAndRollCustomDice(customDiceInput.value);
+        });
+
+        customDiceInput.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter') {
+                parseAndRollCustomDice(customDiceInput.value);
+            }
+        });
+
+        // Enemy section event delegation
+        enemiesContainer.addEventListener('input', (event) => {
+            const target = event.target;
+            const enemyId = target.dataset.enemyId;
+            const field = target.dataset.field;
+            if (enemyId && field) {
+                let value = target.value;
+                if (target.type === 'number') {
+                    value = parseInt(value, 10) || 0;
+                }
+                updateEnemy(enemyId, field, value);
+            }
+        });
+
+        enemiesContainer.addEventListener('click', (event) => {
+            const target = event.target;
+            if (target.classList.contains('remove-enemy-btn')) {
+                const enemyId = target.dataset.enemyId;
+                if (enemyId) {
+                    removeEnemy(enemyId);
+                }
+            } else if (target.classList.contains('enemy-hp-btn')) {
+                const enemyId = target.dataset.enemyId;
+                const action = target.dataset.action;
+                if (enemyId && action) {
+                    const enemy = appData.enemies.find(e => e.id === enemyId);
+                    if (enemy) {
+                        const hpInput = document.querySelector(`#enemy-${enemyId} input[data-field="hp"]`);
+                        if (hpInput) {
+                            let currentHp = parseInt(hpInput.value, 10);
+                            if (action === 'increment') {
+                                currentHp++;
+                            } else if (action === 'decrement') {
+                                currentHp--;
+                            }
+                            hpInput.value = currentHp; // Update input field
+                            updateEnemy(enemyId, 'hp', currentHp); // Update data
+                        }
+                    }
+                }
+            }
+        });
+
+        addEnemyBtn.addEventListener('click', addEnemy);
+    </script>
+</body>
+</html>
