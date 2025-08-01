@@ -1,0 +1,1284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>D&D Toolkit</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Custom styles to ensure Inter font and smooth transitions */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a202c; /* Dark background */
+            color: #e2e8f0; /* Light text */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 1rem;
+            box-sizing: border-box;
+            position: relative; /* Needed for absolute positioning of back button */
+        }
+        .container {
+            background-color: #2d3748; /* Slightly lighter dark background for the card */
+            border-radius: 1.5rem; /* More rounded corners */
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.2);
+            max-width: 900px; /* Wider to accommodate content */
+            width: 100%;
+            padding: 2.5rem;
+            text-align: center;
+            border: 1px solid #4a5568; /* Subtle border */
+        }
+        .btn {
+            background-image: linear-gradient(to right, #63b3ed, #4299e1); /* Blue gradient */
+            color: white;
+            padding: 0.8rem 2rem;
+            border-radius: 0.75rem; /* Rounded button */
+            font-weight: bold;
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: none;
+            cursor: pointer;
+            outline: none;
+        }
+        .btn:hover {
+            background-image: linear-gradient(to right, #4299e1, #3182ce);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+        }
+        .btn:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Specific button styles for homepage */
+        .home-btn {
+            background-image: linear-gradient(to right, #a78bfa, #8b5cf6); /* Purple gradient */
+            padding: 1.2rem 3rem;
+            font-size: 1.5rem;
+            border-radius: 1rem;
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+        }
+        .home-btn:hover {
+            background-image: linear-gradient(to right, #8b5cf6, #7c3aed);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Encounter Generator specific styles */
+        .encounter-section {
+            background-color: #4a5568; /* Even lighter dark background for sections */
+            padding: 1rem;
+            border-radius: 0.75rem;
+            margin-bottom: 1rem;
+            text-align: left;
+            border: 1px solid #636b77;
+        }
+        .encounter-section:last-child {
+            margin-bottom: 0;
+        }
+        .encounter-section h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #a0aec0; /* Lighter grey for headings */
+        }
+        .encounter-section p {
+            font-size: 1.1rem;
+            color: #e2e8f0;
+        }
+        .input-group {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap; /* Allow wrapping on small screens */
+        }
+        .input-group label {
+            font-weight: 500;
+            color: #a0aec0;
+            white-space: nowrap; /* Prevent label from wrapping */
+        }
+        .input-group input {
+            background-color: #2d3748;
+            border: 1px solid #4a5568;
+            border-radius: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            color: #e2e8f0;
+            width: 80px; /* Fixed width for inputs */
+            text-align: center;
+            transition: border-color 0.2s ease-in-out;
+        }
+        .input-group input:focus {
+            outline: none;
+            border-color: #63b3ed;
+        }
+        #difficultyDisplay {
+            font-weight: bold;
+            color: #a0aec0;
+            margin-bottom: 1rem;
+        }
+
+        /* Stat Tracker specific styles */
+        /* Hide number input arrows */
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+        /* Custom scrollbar for better aesthetics */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #2d3748;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4a5568;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #6b7280;
+        }
+
+        /* Message box styles (from encounter generator, adapted) */
+        .message-box {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #c53030; /* Red for error */
+            color: white;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+            max-width: 90%;
+            text-align: center;
+        }
+        .message-box.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .message-box button {
+            background-color: #e53e3e;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            border: none;
+            margin-top: 1rem;
+            cursor: pointer;
+        }
+
+        /* Back button styling - Adjusted position to be outside the container */
+        #backButtonContainer {
+            position: absolute;
+            top: 1rem; /* Adjust as needed */
+            left: 1rem; /* Adjust as needed */
+            z-index: 20; /* Ensure it's on top of everything */
+        }
+        .back-button {
+            background-color: #4a5568;
+            color: #e2e8f0;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: bold;
+            transition: background-color 0.2s ease-in-out;
+            cursor: pointer;
+            border: none; /* Ensure no default button border */
+        }
+        .back-button:hover {
+            background-color: #636b77;
+        }
+
+        /* Magic Item specific styles */
+        .magic-item-entry {
+            background-color: #3a445a;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            border: 1px solid #4a5568;
+        }
+        .magic-item-entry input[type="text"],
+        .magic-item-entry textarea {
+            background-color: #2d3748;
+            border: 1px solid #4a5568;
+            border-radius: 0.375rem;
+            padding: 0.5rem;
+            color: #e2e8f0;
+            width: 100%;
+            transition: border-color 0.2s ease-in-out;
+        }
+        .magic-item-entry input[type="text"]:focus,
+        .magic-item-entry textarea:focus {
+            outline: none;
+            border-color: #a78bfa;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <!-- Moved backButtonContainer outside the main .container -->
+    <div id="backButtonContainer"></div>
+
+    <div class="container">
+        <!-- Homepage Section -->
+        <div id="homepage" class="section">
+            <h1 class="text-5xl font-extrabold mb-12 text-indigo-400">D&D Toolkit</h1>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <button class="home-btn btn" data-section="player-enemy-tracker">Player Stats & Enemy HP</button>
+                <button class="home-btn btn" data-section="dice-roller">Dice Roller</button>
+                <button class="home-btn btn" data-section="encounter-generator">Encounter Generator</button>
+            </div>
+        </div>
+
+        <!-- Player Stats & Enemy HP Section -->
+        <div id="player-enemy-tracker" class="section hidden">
+            <h1 class="text-4xl font-bold text-center mb-8 text-indigo-400">Player Stats & Enemy HP</h1>
+
+            <!-- Players Section -->
+            <div class="mb-10">
+                <h2 class="text-3xl font-semibold mb-6 text-indigo-300">Players</h2>
+                <div id="players-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Player cards will be injected here by JavaScript -->
+                </div>
+                <button id="add-player-btn" class="mt-6 w-full py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg shadow-md transition duration-200">
+                    Add New Player
+                </button>
+            </div>
+
+            <hr class="border-gray-700 my-10">
+
+            <!-- Enemy HP Tracker Section -->
+            <div>
+                <h2 class="text-3xl font-semibold mb-6 text-indigo-300">Enemy HP Tracker</h2>
+                <div id="enemies-container" class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <!-- Enemy cards will be injected here by JavaScript -->
+                </div>
+                <button id="add-enemy-btn" class="w-full py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg shadow-md transition duration-200">
+                    Add New Enemy
+                </button>
+            </div>
+        </div>
+
+        <!-- Dice Roller Section -->
+        <div id="dice-roller" class="section hidden">
+            <h1 class="text-4xl font-semibold mb-6 text-indigo-300">Dice Roller</h1>
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-6">
+                <button class="dice-btn w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-md transition duration-200" data-dice="d4">Roll d4</button>
+                <button class="dice-btn w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-md transition duration-200" data-dice="d6">Roll d6</button>
+                <button class="dice-btn w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-md transition duration-200" data-dice="d8">Roll d8</button>
+                <button class="dice-btn w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-md transition duration-200" data-dice="d10">Roll d10</button>
+                <button class="dice-btn w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-md transition duration-200" data-dice="d12">Roll d12</button>
+                <button class="dice-btn w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-md transition duration-200" data-dice="d20">Roll d20</button>
+                <button class="dice-btn w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-md transition duration-200" data-dice="d100">Roll d100</button>
+            </div>
+            <div class="flex flex-col sm:flex-row gap-4 mb-6">
+                <input type="text" id="custom-dice-input" placeholder="e.g., 2d6+3" class="flex-grow p-3 rounded-lg bg-gray-700 border border-gray-600 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <button id="roll-custom-btn" class="w-full sm:w-auto py-3 px-6 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-lg shadow-md transition duration-200">
+                    Roll Custom
+                </button>
+            </div>
+            <div id="dice-results" class="bg-gray-700 p-4 rounded-lg text-lg text-center font-mono">
+                Roll results will appear here.
+            </div>
+        </div>
+
+        <!-- Encounter Generator Section -->
+        <div id="encounter-generator" class="section hidden">
+            <h1 class="text-4xl font-extrabold mb-8 text-blue-300">Dynamic Encounter Generator</h1>
+
+            <div class="input-group">
+                <label for="playerLevel">Player Level:</label>
+                <input type="number" id="playerLevel" value="3" min="1" max="20">
+
+                <label for="partySize">Party Size:</label>
+                <input type="number" id="partySize" value="4" min="1" max="10">
+            </div>
+
+            <p id="difficultyDisplay" class="mb-4"></p>
+
+            <button id="generateBtn" class="btn mb-8">Generate New Encounter</button>
+
+            <div id="encounterOutput" class="space-y-4">
+                <!-- Encounter details will be displayed here -->
+                <div class="encounter-section">
+                    <h3>Environment:</h3>
+                    <p id="environment"></p>
+                </div>
+                <div class="encounter-section">
+                    <h3>Creature(s):</h3>
+                    <p id="creature"></p>
+                </div>
+                <div class="encounter-section">
+                    <h3>Objective:</h3>
+                    <p id="objective"></p>
+                </div>
+                <div class="encounter-section">
+                    <h3>Complication:</h3>
+                    <p id="complication"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Message Box for errors (from encounter generator) -->
+    <div id="messageBox" class="message-box">
+        <p id="messageText"></p>
+        <button id="closeMessage">OK</button>
+    </div>
+
+    <script>
+        // --- Global Navigation and UI Management ---
+        const sections = document.querySelectorAll('.section');
+        const homepage = document.getElementById('homepage');
+        const backButtonContainer = document.getElementById('backButtonContainer');
+
+        // Function to show a specific section and hide others
+        function showSection(sectionId) {
+            sections.forEach(section => {
+                section.classList.add('hidden');
+            });
+            document.getElementById(sectionId).classList.remove('hidden');
+
+            // Show back button if not on homepage
+            if (sectionId === 'homepage') {
+                backButtonContainer.innerHTML = '';
+            } else {
+                backButtonContainer.innerHTML = `
+                    <button id="backButton" class="back-button">Back to Home</button>
+                `;
+                document.getElementById('backButton').addEventListener('click', () => showSection('homepage'));
+            }
+        }
+
+        // Event listeners for homepage buttons
+        document.querySelectorAll('.home-btn').forEach(button => {
+            button.addEventListener('click', (event) => {
+                const sectionId = event.target.dataset.section;
+                showSection(sectionId);
+            });
+        });
+
+        // --- Encounter Generator Logic ---
+        const generateBtn = document.getElementById('generateBtn');
+        const playerLevelInput = document.getElementById('playerLevel');
+        const partySizeInput = document.getElementById('partySize');
+        const difficultyDisplay = document.getElementById('difficultyDisplay');
+        const environmentEl = document.getElementById('environment');
+        const creatureEl = document.getElementById('creature');
+        const objectiveEl = document.getElementById('objective');
+        const complicationEl = document.getElementById('complication');
+        const messageBox = document.getElementById('messageBox');
+        const messageText = document.getElementById('messageText');
+        const closeMessageBtn = document.getElementById('closeMessage');
+
+        // --- Encounter Data with Difficulty Ranges (1-20) ---
+        const environments = [
+            { text: "a tranquil forest clearing bathed in morning light", min_difficulty: 1, max_difficulty: 3 },
+            { text: "a bustling marketplace at dusk, filled with diverse crowds", min_difficulty: 2, max_difficulty: 6 },
+            { text: "a winding river path near ancient, crumbling ruins", min_difficulty: 4, max_difficulty: 8 },
+            { text: "a dense, mist-shrouded forest with eerie silence", min_difficulty: 5, max_difficulty: 10 },
+            { text: "a treacherous mountain pass, narrow and windswept", min_difficulty: 7, max_difficulty: 12 },
+            { text: "a scorched desert canyon, baking under twin suns", min_difficulty: 8, max_difficulty: 13 },
+            { text: "a dark, echoing cave system, dripping with unseen water", min_difficulty: 9, max_difficulty: 14 },
+            { text: "a forgotten, overgrown swamp, thick with stagnant air", min_difficulty: 10, max_difficulty: 15 },
+            { text: "the suffocating depths of an abyssal trench, lit by bioluminescence", min_difficulty: 12, max_difficulty: 17 },
+            { text: "a desolate, volcanic wasteland, scarred by recent eruptions", min_difficulty: 14, max_difficulty: 18 },
+            { text: "a vibrant, alien jungle, teeming with strange flora and fauna", min_difficulty: 15, max_difficulty: 19 },
+            { text: "the desolate ruins of a forgotten metropolis, reclaimed by nature", min_difficulty: 11, max_difficulty: 16 },
+            { text: "a snow-blasted tundra, where the wind howls like a banshee", min_difficulty: 9, max_difficulty: 14 },
+            { text: "a hidden, magical grove pulsating with ancient energy", min_difficulty: 6, max_difficulty: 11 },
+            { text: "the chaotic underbelly of a sprawling steampunk city", min_difficulty: 7, max_difficulty: 12 },
+            { text: "a haunted graveyard, where restless spirits linger", min_difficulty: 5, max_difficulty: 9 },
+            { text: "a serene, floating island in the sky, accessible only by magic", min_difficulty: 13, max_difficulty: 18 },
+            { text: "the crystalline caverns of an ice giant's lair", min_difficulty: 16, max_difficulty: 20 },
+            { text: "a bustling pirate port, rife with shady dealings", min_difficulty: 4, max_difficulty: 8 },
+            { text: "an ethereal plane, shifting and unpredictable", min_difficulty: 17, max_difficulty: 20 },
+            { text: "a forgotten temple deep within a treacherous jungle, overgrown and crumbling", min_difficulty: 13, max_difficulty: 17 },
+            { text: "the shimmering halls of an elemental plane of fire, where the air itself burns", min_difficulty: 18, max_difficulty: 20 },
+            { text: "a desolate, wind-scoured plateau dotted with ancient, ominous monoliths", min_difficulty: 10, max_difficulty: 14 },
+            { text: "a charming, isolated village suddenly gripped by an unnatural, eternal winter", min_difficulty: 6, max_difficulty: 10 },
+            { text: "the bustling, multi-tiered city of a subterranean race, carved into solid rock", min_difficulty: 8, max_difficulty: 13 },
+            // 20 NEW ENVIRONMENTS
+            { text: "a sun-drenched coastal town, preparing for a festival", min_difficulty: 1, max_difficulty: 4 },
+            { text: "a quiet, abandoned farmstead, overgrown with weeds", min_difficulty: 1, max_difficulty: 3 },
+            { text: "the bustling docks of a major trading city, full of diverse ships", min_difficulty: 3, max_difficulty: 7 },
+            { text: "a deep, forgotten well, rumored to lead to an underground river", min_difficulty: 2, max_difficulty: 5 },
+            { text: "a vibrant, glowing mushroom forest, casting strange shadows", min_difficulty: 5, max_difficulty: 9 },
+            { text: "a crumbling wizard's tower, partially submerged in a bog", min_difficulty: 6, max_difficulty: 10 },
+            { text: "the narrow, winding streets of a thieves' guild district", min_difficulty: 7, max_difficulty: 11 },
+            { text: "a desolate battlefield, still scarred by a recent conflict", min_difficulty: 8, max_difficulty: 12 },
+            { text: "a grand, opulent ballroom, now eerily silent and dusty", min_difficulty: 9, max_difficulty: 13 },
+            { text: "the shifting sands of a desert oasis, vital but dangerous", min_difficulty: 10, max_difficulty: 14 },
+            { text: "a vast, ancient library, filled with forbidden knowledge and watchful guardians", min_difficulty: 11, max_difficulty: 15 },
+            { text: "the perilous canopy of a colossal, sky-reaching tree", min_difficulty: 12, max_difficulty: 16 },
+            { text: "a frozen glacier labyrinth, where the ice groans and shifts", min_difficulty: 13, max_difficulty: 17 },
+            { text: "the chaotic heart of an active volcano, spewing ash and fire", min_difficulty: 14, max_difficulty: 18 },
+            { text: "a pocket dimension, warped and unpredictable, defying natural laws", min_difficulty: 15, max_difficulty: 19 },
+            { text: "the ruins of a titan's forge, still humming with residual energy", min_difficulty: 16, max_difficulty: 20 },
+            { text: "a city submerged underwater, its structures now home to aquatic life", min_difficulty: 17, max_difficulty: 20 },
+            { text: "the desolate surface of a dying moon, exposed to cosmic horrors", min_difficulty: 18, max_difficulty: 20 },
+            { text: "a celestial engine, drifting through the void, its purpose unknown", min_difficulty: 19, max_difficulty: 20 },
+            { text: "the very edge of reality, where the planes bleed into one another", min_difficulty: 20, max_difficulty: 20 }
+        ];
+
+        const creatures = [
+            // Low Difficulty (1-5)
+            { text: "a lone, injured wolf seeking shelter", min_difficulty: 1, max_difficulty: 3 },
+            { text: "a small band of petty thieves, easily startled", min_difficulty: 2, max_difficulty: 5 },
+            { text: "a mischievous sprite causing minor inconveniences", min_difficulty: 1, max_difficulty: 4 },
+            { text: "a pack of hungry, territorial wolves", min_difficulty: 3, max_difficulty: 7 },
+            { text: "a few agitated giant rats scurrying from the shadows", min_difficulty: 1, max_difficulty: 2 },
+            { text: "a curious, but harmless, forest spirit observing from afar", min_difficulty: 1, max_difficulty: 3 },
+            { text: "a group of lost, non-hostile commoners seeking aid", min_difficulty: 1, max_difficulty: 2 },
+            { text: "a single, weak zombie shambling aimlessly", min_difficulty: 2, max_difficulty: 4 },
+            { text: "a flock of aggressive stirges attempting to feed", min_difficulty: 3, max_difficulty: 5 },
+            { text: "a grumpy badger defending its sett", min_difficulty: 1, max_difficulty: 2 },
+
+            // Medium Difficulty (6-10)
+            { text: "a cunning band of goblins setting up an ambush", min_difficulty: 5, max_difficulty: 9 },
+            { text: "a swarm of aggressive giant spiders guarding their nest", min_difficulty: 6, max_difficulty: 10 },
+            { text: "a lone, desperate troll guarding a bridge", min_difficulty: 6, max_difficulty: 10 },
+            { text: "a patrol of restless undead skeletons", min_difficulty: 7, max_difficulty: 11 },
+            { text: "a group of well-equipped bounty hunters pursuing a target", min_difficulty: 7, max_difficulty: 12 },
+            { text: "a hulking, dim-witted ogre demanding tribute", min_difficulty: 8, max_difficulty: 12 },
+            { text: "a hive of intelligent, aggressive insectoids", min_difficulty: 9, max_difficulty: 14 },
+            { text: "a group of disillusioned mercenaries, heavily armed", min_difficulty: 9, max_difficulty: 13 },
+            { text: "a dire bear defending its territory fiercely, enraged by intruders", min_difficulty: 7, max_difficulty: 11 },
+            { text: "a pack of ravenous ghouls emerging from graves", min_difficulty: 6, max_difficulty: 9 },
+            { text: "a cunning displacer beast toying with its prey", min_difficulty: 8, max_difficulty: 11 },
+            { text: "a band of hobgoblins enacting a military drill", min_difficulty: 6, max_difficulty: 10 },
+            { text: "a shambling mound, a plant creature seeking nutrients", min_difficulty: 9, max_difficulty: 12 },
+            { text: "a reclusive druid testing the party's intentions", min_difficulty: 7, max_difficulty: 10 },
+            { text: "a minor demon summoned by accident, causing chaos", min_difficulty: 8, max_difficulty: 11 },
+
+            // High Difficulty (11-15)
+            { text: "a territorial griffin defending its aerie", min_difficulty: 10, max_difficulty: 14 },
+            { text: "a curious, displaced elemental, lashing out in confusion", min_difficulty: 11, max_difficulty: 15 },
+            { text: "a small cult performing a dark, unsettling ritual", min_difficulty: 12, max_difficulty: 16 },
+            { text: "a powerful, ancient treant awakened from slumber", min_difficulty: 13, max_difficulty: 17 },
+            { text: "a spectral knight, bound to its ancient duty", min_difficulty: 10, max_difficulty: 15 },
+            { text: "a stone giant patrol, hurling massive boulders with terrifying accuracy", min_difficulty: 11, max_difficulty: 15 },
+            { text: "a remorhaz, burrowing through ice and rock", min_difficulty: 12, max_difficulty: 15 },
+            { text: "a gorgon, turning trespassers to stone with a glance", min_difficulty: 13, max_difficulty: 16 },
+            { text: "a cunning vampire spawn preying on travelers", min_difficulty: 14, max_difficulty: 18 },
+            { text: "a formidable minotaur guarding its labyrinth", min_difficulty: 11, max_difficulty: 14 },
+            { text: "a fierce young white dragon defending its icy lair", min_difficulty: 13, max_difficulty: 16 },
+            { text: "a band of drow elite warriors ambushing from the shadows", min_difficulty: 12, max_difficulty: 15 },
+            { text: "a powerful golem, animated by ancient magic, defending a vault", min_difficulty: 14, max_difficulty: 17 },
+            { text: "a swarm of intellect devourers seeking hosts, their minds hungry for brains", min_difficulty: 14, max_difficulty: 17 },
+            { text: "a formidable adult owlbear, highly aggressive and territorial", min_difficulty: 10, max_difficulty: 13 },
+
+            // Very High Difficulty (16-20)
+            { text: "a ferocious chimera, a beast of multiple parts", min_difficulty: 16, max_difficulty: 19 },
+            { text: "a young dragon defending its hoard", min_difficulty: 15, max_difficulty: 18 },
+            { text: "a frost giant chieftain leading a raiding party", min_difficulty: 14, max_difficulty: 17 },
+            { text: "a beholder lurking in its lair, paranoid and powerful", min_difficulty: 17, max_difficulty: 20 },
+            { text: "an ancient red dragon, a force of nature", min_difficulty: 19, max_difficulty: 20 },
+            { text: "a storm giant patrol, wielding immense elemental power", min_difficulty: 16, max_difficulty: 19 },
+            { text: "a demon lord's vanguard, tearing through the fabric of reality", min_difficulty: 18, max_difficulty: 20 },
+            { text: "a colossal kraken emerging from the depths", min_difficulty: 17, max_difficulty: 20 },
+            { text: "a lich and its undead retinue, seeking forbidden knowledge", min_difficulty: 16, max_difficulty: 19 },
+            { text: "a githyanki war party on an astral raid, seeking psionic treasures", min_difficulty: 17, max_difficulty: 20 },
+            { text: "a mind flayer and its thralls, seeking new victims for their gruesome experiments", min_difficulty: 18, max_difficulty: 20 },
+            { text: "a powerful arch-devil or demon leading a legion of lesser fiends", min_difficulty: 19, max_difficulty: 20 },
+            { text: "a colossal elder elemental, unleashed and rampaging", min_difficulty: 17, max_difficulty: 20 },
+            { text: "a highly intelligent and manipulative aboleth, controlling a vast network of minions", min_difficulty: 16, max_difficulty: 19 },
+            { text: "a legendary monstrous beast, unique and devastating, guarding an ancient secret", min_difficulty: 18, max_difficulty: 20 },
+            { text: "a powerful vampire lord and their court, defending their ancestral castle", min_difficulty: 17, max_difficulty: 20 },
+            { text: "a celestial being, fallen or corrupted, challenging the party's morality", min_difficulty: 15, max_difficulty: 18 },
+            { text: "a full-fledged army of well-trained orcs led by a war chief", min_difficulty: 14, max_difficulty: 17 },
+            { text: "a powerful genie, capricious and dangerous, granting twisted wishes", min_difficulty: 15, max_difficulty: 18 },
+            { text: "a territorial ancient green dragon, master of its poisonous swamp", min_difficulty: 19, max_difficulty: 20 },
+            // 20 NEW CREATURES
+            { text: "a group of curious forest fey, observing from afar", min_difficulty: 1, max_difficulty: 2 },
+            { text: "a lone, desperate bugbear trying to steal supplies", min_difficulty: 3, max_difficulty: 6 },
+            { text: "a small coven of hags seeking new victims", min_difficulty: 8, max_difficulty: 12 },
+            { text: "a hungry mimic disguised as a treasure chest", min_difficulty: 5, max_difficulty: 9 },
+            { text: "a patrol of animated armors, guarding an ancient vault", min_difficulty: 7, max_difficulty: 11 },
+            { text: "a pack of ravenous worgs, tracking fresh prey", min_difficulty: 4, max_difficulty: 7 },
+            { text: "a reclusive, powerful archmage testing intruders with illusions", min_difficulty: 15, max_difficulty: 19 },
+            { text: "a swarm of angry giant wasps defending their hive", min_difficulty: 2, max_difficulty: 5 },
+            { text: "a disgruntled ghost haunting its former home", min_difficulty: 6, max_difficulty: 10 },
+            { text: "a group of wild centaurs defending their sacred grove", min_difficulty: 9, max_difficulty: 13 },
+            { text: "a cunning wererat gang operating in the sewers", min_difficulty: 7, max_difficulty: 11 },
+            { text: "a young blue dragon, territorial and prone to lightning strikes", min_difficulty: 14, max_difficulty: 17 },
+            { text: "a powerful and ancient dryad, protecting her forest with fierce magic", min_difficulty: 10, max_difficulty: 14 },
+            { text: "a group of fanatic cultists attempting a summoning ritual", min_difficulty: 12, max_difficulty: 16 },
+            { text: "a formidable iron golem, nearly impervious to conventional attacks", min_difficulty: 17, max_difficulty: 20 },
+            { text: "a hungry gelatinous cube, slowly dissolving everything in its path", min_difficulty: 5, max_difficulty: 8 },
+            { text: "a powerful and enigmatic Sphinx, posing riddles to those who pass", min_difficulty: 16, max_difficulty: 19 },
+            { text: "a band of heavily armed githzerai monks, seeking to restore balance", min_difficulty: 13, max_difficulty: 17 },
+            { text: "a terrifying Tarrasque, awakened and rampaging across the land", min_difficulty: 20, max_difficulty: 20 },
+            { text: "a playful but dangerous elemental, causing localized chaos", min_difficulty: 9, max_difficulty: 13 }
+        ];
+
+        const objectives = [
+            { text: "find a lost child who wandered off", min_difficulty: 1, max_difficulty: 4 },
+            { text: "deliver an urgent message to a nearby settlement", min_difficulty: 2, max_difficulty: 5 },
+            { text: "clear a minor blockage from a well-used path", min_difficulty: 1, max_difficulty: 3 },
+            { text: "gather rare medicinal herbs before nightfall", min_difficulty: 3, max_difficulty: 6 },
+            { text: "rescue a captured villager from a small bandit camp", min_difficulty: 4, max_difficulty: 8 },
+            { text: "escort a valuable but fragile cargo through dangerous territory", min_difficulty: 6, max_difficulty: 10 },
+            { text: "recover stolen goods from a cunning group of thieves", min_difficulty: 5, max_difficulty: 9 },
+            { text: "investigate strange disappearances in a remote area", min_difficulty: 7, max_difficulty: 11 },
+            { text: "defeat a monstrous threat that has been terrorizing locals", min_difficulty: 9, max_difficulty: 13 },
+            { text: "unravel a local mystery involving ancient prophecies", min_difficulty: 10, max_difficulty: 14 },
+            { text: "survive a sudden, brutal ambush by elite foes", min_difficulty: 12, max_difficulty: 16 },
+            { text: "stop a dark ritual before it summons an elder evil", min_difficulty: 15, max_difficulty: 19 },
+            { text: "retrieve a legendary artifact from a heavily guarded vault", min_difficulty: 16, max_difficulty: 20 },
+            { text: "negotiate a peace treaty between warring factions", min_difficulty: 8, max_difficulty: 12 },
+            { text: "map an unexplored section of a vast cavern system", min_difficulty: 7, max_difficulty: 11 },
+            { text: "disarm a magical ward protecting a cursed area", min_difficulty: 11, max_difficulty: 15 },
+            { text: "find a cure for a spreading plague", min_difficulty: 13, max_difficulty: 17 },
+            { text: "protect a vulnerable caravan from relentless attacks", min_difficulty: 9, max_difficulty: 14 },
+            { text: "assassinate a corrupt noble protected by powerful magic", min_difficulty: 14, max_difficulty: 18 },
+            { text: "close a planar rift before it engulfs the region", min_difficulty: 17, max_difficulty: 20 },
+            { text: "retrieve a fragment of a shattered god's essence, hidden in a perilous realm", min_difficulty: 18, max_difficulty: 20 },
+            { text: "sabotage a ritual that would unleash a planar invasion, threatening all life", min_difficulty: 16, max_difficulty: 19 },
+            { text: "negotiate a fragile truce between two ancient, warring clans on the brink of war", min_difficulty: 9, max_difficulty: 13 },
+            { text: "investigate the mysterious silence from a remote magical academy, fearing the worst", min_difficulty: 12, max_difficulty: 16 },
+            { text: "recover a stolen royal heirloom from a heavily fortified stronghold, teeming with guards", min_difficulty: 10, max_difficulty: 14 },
+            // 20 NEW OBJECTIVES
+            { text: "help a lost merchant find their way back to the road", min_difficulty: 1, max_difficulty: 3 },
+            { text: "clear a small cave of nuisance creatures for local farmers", min_difficulty: 2, max_difficulty: 5 },
+            { text: "recover a stolen pet from a mischievous forest creature", min_difficulty: 1, max_difficulty: 4 },
+            { text: "investigate strange lights seen in the distant hills", min_difficulty: 3, max_difficulty: 6 },
+            { text: "find a rare ingredient for a local alchemist's potion", min_difficulty: 4, max_difficulty: 7 },
+            { text: "deal with a minor haunting in an old manor house", min_difficulty: 5, max_difficulty: 9 },
+            { text: "track down a missing person who vanished without a trace", min_difficulty: 6, max_difficulty: 10 },
+            { text: "secure a vital trade route from persistent monster attacks", min_difficulty: 7, max_difficulty: 11 },
+            { text: "recover a sacred relic from a desecrated temple", min_difficulty: 8, max_difficulty: 12 },
+            { text: "stop a growing goblinoid horde from raiding nearby villages", min_difficulty: 9, max_difficulty: 13 },
+            { text: "infiltrate an enemy stronghold to gather intelligence", min_difficulty: 10, max_difficulty: 14 },
+            { text: "cleanse a corrupted natural landmark of dark influence", min_difficulty: 11, max_difficulty: 15 },
+            { text: "rescue a kidnapped dignitary from a powerful criminal syndicate", min_difficulty: 12, max_difficulty: 16 },
+            { text: "prevent a powerful magical artifact from falling into the wrong hands", min_difficulty: 13, max_difficulty: 17 },
+            { text: "defeat a powerful demon or devil that has manifested on the material plane", min_difficulty: 14, max_difficulty: 18 },
+            { text: "journey to a lost city to uncover ancient secrets and powerful magic", min_difficulty: 15, max_difficulty: 19 },
+            { text: "forge an alliance with a reclusive and distrustful ancient race", min_difficulty: 16, max_difficulty: 19 },
+            { text: "stop a catastrophic planar convergence that threatens to destroy the world", min_difficulty: 17, max_difficulty: 20 },
+            { text: "defeat a legendary beast that has awakened and is laying waste to the land", min_difficulty: 18, max_difficulty: 20 },
+            { text: "ascend to godhood or prevent a rival from doing so", min_difficulty: 19, max_difficulty: 20 }
+        ];
+
+        const complications = [
+            { text: "a sudden, light rain begins, making the ground slick", min_difficulty: 1, max_difficulty: 3 },
+            { text: "resources are slightly limited, requiring careful management", min_difficulty: 2, max_difficulty: 5 },
+            { text: "a minor obstacle blocks the direct path, requiring a detour", min_difficulty: 1, max_difficulty: 4 },
+            { text: "a sudden, violent storm erupts, reducing visibility", min_difficulty: 4, max_difficulty: 8 },
+            { text: "the ground is riddled with hidden, non-lethal traps", min_difficulty: 5, max_difficulty: 9 },
+            { text: "an unexpected, neutral third party appears, complicating matters", min_difficulty: 6, max_difficulty: 10 },
+            { text: "there's a strict, but manageable, time limit", min_difficulty: 7, max_difficulty: 11 },
+            { text: "reinforcements arrive unexpectedly, but are few in number", min_difficulty: 8, max_difficulty: 12 },
+            { text: "a difficult moral dilemma arises, with no easy answer", min_difficulty: 9, max_difficulty: 13 },
+            { text: "the environment itself is mildly hostile (e.g., strong currents, thorny bushes)", min_difficulty: 10, max_difficulty: 14 },
+            { text: "a powerful magical anomaly interferes, causing minor disruptions", min_difficulty: 11, max_difficulty: 15 },
+            { text: "a trusted companion is injured and needs immediate attention", min_difficulty: 12, max_difficulty: 16 },
+            { text: "the target is not what it seems, requiring a change of plans", min_difficulty: 13, max_difficulty: 17 },
+            { text: "a powerful magical anomaly constantly drains power or causes debuffs", min_difficulty: 14, max_difficulty: 18 },
+            { text: "a trusted companion betrays the group at a critical moment", min_difficulty: 15, max_difficulty: 19 },
+            { text: "the environment is actively trying to kill them (e.g., collapsing cave, lava flow)", min_difficulty: 16, max_difficulty: 20 },
+            { text: "a powerful entity intervenes, changing the rules of the encounter", min_difficulty: 17, max_difficulty: 20 },
+            { text: "a contagious disease breaks out within the party or population", min_difficulty: 10, max_difficulty: 15 },
+            { text: "a crucial item is lost or broken during the encounter", min_difficulty: 8, max_difficulty: 13 },
+            { text: "the party is separated and must find each other", min_difficulty: 7, max_difficulty: 12 },
+            { text: "an ancient curse activates, affecting all nearby", min_difficulty: 15, max_difficulty: 19 },
+            { text: "a rival adventuring party arrives, seeking the same objective", min_difficulty: 9, max_difficulty: 14 },
+            { text: "the environment itself is sentient and actively hostile, manipulating the terrain", min_difficulty: 18, max_difficulty: 20 },
+            { text: "a powerful, unforeseen magical surge disables all enchantments and magical items temporarily", min_difficulty: 16, max_difficulty: 19 },
+            { text: "the party is afflicted with a debilitating, creeping curse that saps their strength", min_difficulty: 13, max_difficulty: 17 },
+            { text: "a sudden, localized anti-magic field appears intermittently, neutralizing magic users", min_difficulty: 11, max_difficulty: 15 },
+            { text: "a crucial path collapses, forcing a dangerous alternative route through a monster-infested area", min_difficulty: 8, max_difficulty: 12 },
+            // 20 NEW COMPLICATIONS
+            { text: "a local NPC is unexpectedly hostile or uncooperative", min_difficulty: 1, max_difficulty: 4 },
+            { text: "the weather turns unexpectedly cold, requiring warmth", min_difficulty: 1, max_difficulty: 3 },
+            { text: "a minor landslide blocks a key path, forcing a climb", min_difficulty: 2, max_difficulty: 5 },
+            { text: "a flock of aggressive birds attacks, causing minor distractions", min_difficulty: 2, max_difficulty: 4 },
+            { text: "the area is under a magical silence, making communication difficult", min_difficulty: 5, max_difficulty: 9 },
+            { text: "a non-combat encounter requires a specific skill check to proceed", min_difficulty: 3, max_difficulty: 6 },
+            { text: "the party's reputation precedes them, for better or worse", min_difficulty: 4, max_difficulty: 8 },
+            { text: "a valuable item is accidentally dropped into a hazardous area", min_difficulty: 6, max_difficulty: 10 },
+            { text: "a rival faction attempts to steal the objective from under their noses", min_difficulty: 7, max_difficulty: 11 },
+            { text: "the ground is unstable, threatening to collapse at any moment", min_difficulty: 8, max_difficulty: 12 },
+            { text: "a powerful illusion hides the true nature of the area or enemy", min_difficulty: 9, max_difficulty: 13 },
+            { text: "the party is afflicted with a temporary, non-damaging curse", min_difficulty: 10, max_difficulty: 14 },
+            { text: "a powerful guardian or trap activates when the objective is neared", min_difficulty: 11, max_difficulty: 15 },
+            { text: "the area is filled with a mind-altering gas, causing confusion", min_difficulty: 12, max_difficulty: 16 },
+            { text: "a powerful BBEG (Big Bad Evil Guy) makes a dramatic, threatening appearance", min_difficulty: 13, max_difficulty: 17 },
+            { text: "the party is forced to make a difficult choice with severe consequences", min_difficulty: 14, max_difficulty: 18 },
+            { text: "a powerful magical artifact nearby is drawing dangerous creatures", min_difficulty: 15, max_difficulty: 19 },
+            { text: "the very fabric of reality is fraying, causing unpredictable effects", min_difficulty: 16, max_difficulty: 20 },
+            { text: "a powerful deity or cosmic entity takes an interest, for unknown reasons", min_difficulty: 17, max_difficulty: 20 },
+            { text: "the party's actions inadvertently unleash a greater, unforeseen threat", min_difficulty: 18, max_difficulty: 20 }
+        ];
+
+        // --- Utility Functions for Encounter Generator ---
+        function getRandomElement(arr) {
+            return arr[Math.floor(Math.random() * arr.length)];
+        }
+
+        function showMessage(message) {
+            messageText.textContent = message;
+            messageBox.classList.add('show');
+        }
+
+        function hideMessage() {
+            messageBox.classList.remove('show');
+        }
+
+        closeMessageBtn.addEventListener('click', hideMessage);
+
+        /**
+         * Calculates a difficulty rating from 1 to 20 based on player level and party size.
+         * This formula aims to scale linearly, with higher levels and more party members
+         * increasing the rating.
+         * @param {number} playerLevel - The average level of the players (1-20).
+         * @param {number} partySize - The number of players in the party (1-10).
+         * @returns {number} The calculated difficulty rating (1-20).
+         */
+        function calculateDifficultyRating(playerLevel, partySize) {
+            // Define min/max values for scaling
+            const minLevel = 1;
+            const maxLevel = 20;
+            const minPartySize = 1;
+            const maxPartySize = 10;
+
+            // Calculate a raw score based on weighted level and party size
+            const rawScore = (playerLevel * 3) + (partySize * 1);
+
+            // Determine the min and max possible raw scores
+            const minRawScore = (minLevel * 3) + (minPartySize * 1);
+            const maxRawScore = (maxLevel * 3) + (maxPartySize * 1);
+
+            // Normalize the raw score to a 0-1 range
+            const normalizedScore = (rawScore - minRawScore) / (maxRawScore - minRawScore);
+
+            // Scale the normalized score to a 1-20 range
+            const difficultyRating = Math.round(normalizedScore * 19) + 1;
+
+            // Ensure the rating stays within 1-20 bounds
+            return Math.max(1, Math.min(20, difficultyRating));
+        }
+
+        /**
+         * Selects a random encounter element from a given list that falls within the
+         * calculated difficulty rating. To reduce repetition, it attempts to avoid
+         * recently used elements.
+         * @param {Array<Object>} dataList - The list of encounter elements (e.g., environments).
+         * @param {number} currentRating - The calculated difficulty rating (1-20).
+         * @param {Array<string>} [excludeList=[]] - Optional: A list of texts to exclude from selection.
+         * @returns {string} The text of a randomly selected element.
+         */
+        function selectDynamicElement(dataList, currentRating, excludeList = []) {
+            const suitableElements = dataList.filter(item =>
+                currentRating >= item.min_difficulty &&
+                currentRating <= item.max_difficulty &&
+                !excludeList.includes(item.text)
+            );
+
+            if (suitableElements.length > 0) {
+                return getRandomElement(suitableElements).text;
+            } else {
+                // Fallback: If no suitable elements (e.g., all filtered out by excludeList or very specific rating)
+                // Try again without exclusion, or pick from all if still no match
+                const allSuitable = dataList.filter(item =>
+                    currentRating >= item.min_difficulty && currentRating <= item.max_difficulty
+                );
+                if (allSuitable.length > 0) {
+                    return getRandomElement(allSuitable).text;
+                }
+                // Final fallback: if no suitable elements at all (shouldn't happen with good data)
+                console.warn(`No suitable element found for rating ${currentRating} in list. Falling back to any element.`);
+                return getRandomElement(dataList).text;
+            }
+        }
+
+        // Store last generated elements to reduce immediate repetition
+        let lastGenerated = {
+            environment: "",
+            creature: "",
+            objective: "",
+            complication: ""
+        };
+
+        // --- Main Generation Function for Encounter Generator ---
+        function generateEncounter() {
+            const playerLevel = parseInt(playerLevelInput.value);
+            const partySize = parseInt(partySizeInput.value);
+
+            // Input validation
+            if (isNaN(playerLevel) || playerLevel < 1 || playerLevel > 20) {
+                showMessage("Please enter a valid Player Level between 1 and 20.");
+                return;
+            }
+            if (isNaN(partySize) || partySize < 1 || partySize > 10) {
+                showMessage("Please enter a valid Party Size between 1 and 10.");
+                return;
+            }
+
+            const currentDifficultyRating = calculateDifficultyRating(playerLevel, partySize);
+            difficultyDisplay.innerHTML = `Calculated Difficulty Rating: <span class="text-blue-200">${currentDifficultyRating} / 20</span>`;
+
+            // Generate elements, trying to avoid immediate repetition
+            const newEnvironment = selectDynamicElement(environments, currentDifficultyRating, [lastGenerated.environment]);
+            const newCreature = selectDynamicElement(creatures, currentDifficultyRating, [lastGenerated.creature]);
+            const newObjective = selectDynamicElement(objectives, currentDifficultyRating, [lastGenerated.objective]);
+            const newComplication = selectDynamicElement(complications, currentDifficultyRating, [lastGenerated.complication]);
+
+            environmentEl.textContent = newEnvironment;
+            creatureEl.textContent = newCreature;
+            objectiveEl.textContent = newObjective;
+            complicationEl.textContent = newComplication;
+
+            // Update last generated values
+            lastGenerated = {
+                environment: newEnvironment,
+                creature: newCreature,
+                objective: newObjective,
+                complication: newComplication
+            };
+        }
+
+        // --- Player Stat Tracker & Enemy HP Tracker Logic ---
+        // Unique ID for local storage to prevent conflicts
+        const APP_STORAGE_KEY = 'dnd-stat-tracker-data';
+
+        // Helper to generate unique IDs
+        const generateId = () => Math.random().toString(36).substr(2, 9);
+
+        // Initial data structure
+        let appData = {
+            players: [],
+            enemies: []
+        };
+
+        // --- Data Persistence Functions ---
+        const loadData = () => {
+            const storedData = localStorage.getItem(APP_STORAGE_KEY);
+            if (storedData) {
+                appData = JSON.parse(storedData);
+            }
+        };
+
+        const saveData = () => {
+            localStorage.setItem(APP_STORAGE_KEY, JSON.stringify(appData));
+        };
+
+        // --- Player Management ---
+        const playersContainer = document.getElementById('players-container');
+        const addPlayerBtn = document.getElementById('add-player-btn');
+
+        const createPlayerCard = (player) => {
+            const playerCard = document.createElement('div');
+            playerCard.id = `player-${player.id}`;
+            playerCard.className = 'bg-gray-700 p-6 rounded-lg shadow-lg border border-gray-600 flex flex-col space-y-4';
+
+            // HTML for Magic Items
+            const magicItemsHtml = player.magicItems.map(item => `
+                <div class="magic-item-entry" data-item-id="${item.id}">
+                    <div class="flex items-center justify-between">
+                        <input type="text" value="${item.name}" data-player-id="${player.id}" data-item-id="${item.id}" data-field="name" class="magic-item-name-input text-lg font-semibold" placeholder="Item Name">
+                        <button class="remove-magic-item-btn text-red-400 hover:text-red-500 text-lg font-bold" data-player-id="${player.id}" data-item-id="${item.id}">&times;</button>
+                    </div>
+                    <textarea data-player-id="${player.id}" data-item-id="${item.id}" data-field="description" class="magic-item-description-input text-sm" placeholder="Item Description">${item.description}</textarea>
+                </div>
+            `).join('');
+
+
+            playerCard.innerHTML = `
+                <div class="flex items-center justify-between mb-4">
+                    <input type="text" value="${player.name}" data-player-id="${player.id}" data-field="name"
+                           class="player-name-input text-2xl font-bold bg-transparent border-b border-gray-500 pb-1 focus:outline-none focus:border-indigo-400 w-full mr-2"
+                           placeholder="Player Name">
+                    <button class="remove-player-btn text-red-400 hover:text-red-500 text-lg font-bold transition duration-200" data-player-id="${player.id}">
+                        &times;
+                    </button>
+                </div>
+
+                <!-- Stats -->
+                <div class="grid grid-cols-2 gap-3">
+                    ${Object.keys(player.stats).map(stat => `
+                        <div class="flex items-center">
+                            <label class="uppercase text-sm font-semibold flex-shrink-0 w-1/3 min-w-[40px]">${stat}:</label>
+                            <input type="number" value="${player.stats[stat]}" data-player-id="${player.id}" data-field="stats.${stat}"
+                                   class="player-input flex-grow p-2 bg-gray-600 rounded-md border border-gray-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 text-center min-w-0">
+                        </div>
+                    `).join('')}
+                </div>
+
+                <!-- HP, AC, Initiative, Speed -->
+                <div class="flex flex-col gap-3">
+                    <div class="flex items-center">
+                        <label class="text-sm font-semibold flex-shrink-0 w-1/4 min-w-[30px] mr-2">HP:</label>
+                        <input type="number" value="${player.hp.current}" data-player-id="${player.id}" data-field="hp.current"
+                               class="player-input flex-grow p-2 bg-gray-600 rounded-md border border-gray-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 text-center min-w-0 max-w-[80px]">
+                        <span class="mx-1 flex-shrink-0">/</span>
+                        <input type="number" value="${player.hp.max}" data-player-id="${player.id}" data-field="hp.max"
+                               class="player-input flex-grow p-2 bg-gray-600 rounded-md border border-gray-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 text-center min-w-0 max-w-[80px]">
+                    </div>
+                    <div class="flex items-center">
+                        <label class="text-sm font-semibold flex-shrink-0 w-1/3 min-w-[30px] mr-2">AC:</label>
+                        <input type="number" value="${player.ac}" data-player-id="${player.id}" data-field="ac"
+                               class="player-input flex-grow p-2 bg-gray-600 rounded-md border border-gray-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 text-center min-w-0 max-w-[80px]">
+                    </div>
+                    <div class="flex items-center">
+                        <label class="text-sm font-semibold flex-shrink-0 w-1/3 min-w-[30px] mr-2">Init:</label>
+                        <input type="number" value="${player.initiative}" data-player-id="${player.id}" data-field="initiative"
+                               class="player-input flex-grow p-2 bg-gray-600 rounded-md border border-gray-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 text-center min-w-0 max-w-[80px]">
+                    </div>
+                    <div class="flex items-center">
+                        <label class="text-sm font-semibold flex-shrink-0 w-1/3 min-w-[30px] mr-2">Speed:</label>
+                        <input type="number" value="${player.speed}" data-player-id="${player.id}" data-field="speed"
+                               class="player-input flex-grow p-2 bg-gray-600 rounded-md border border-gray-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 text-center min-w-0 max-w-[80px]">
+                    </div>
+                </div>
+
+                <!-- Currency Section -->
+                <div class="mt-4 border-t border-gray-600 pt-4">
+                    <h3 class="text-xl font-semibold mb-3 text-indigo-200">Currency</h3>
+                    <div class="grid grid-cols-3 gap-3">
+                        <div class="flex items-center">
+                            <label class="text-sm font-semibold flex-shrink-0 mr-1">CP:</label>
+                            <input type="number" value="${player.currency.cp}" data-player-id="${player.id}" data-field="currency.cp"
+                                   class="player-input w-full p-2 bg-gray-600 rounded-md border border-gray-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 text-center text-sm">
+                        </div>
+                        <div class="flex items-center">
+                            <label class="text-sm font-semibold flex-shrink-0 mr-1">SP:</label>
+                            <input type="number" value="${player.currency.sp}" data-player-id="${player.id}" data-field="currency.sp"
+                                   class="player-input w-full p-2 bg-gray-600 rounded-md border border-gray-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 text-center text-sm">
+                        </div>
+                        <div class="flex items-center">
+                            <label class="text-sm font-semibold flex-shrink-0 mr-1">GP:</label>
+                            <input type="number" value="${player.currency.gp}" data-player-id="${player.id}" data-field="currency.gp"
+                                   class="player-input w-full p-2 bg-gray-600 rounded-md border border-gray-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 text-center text-sm">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Spell Slots -->
+                <div class="mt-4 border-t border-gray-600 pt-4">
+                    <h3 class="text-xl font-semibold mb-3 text-indigo-200">Spell Slots</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">
+                        ${Object.keys(player.spellSlots).map(level => `
+                            <div class="flex items-center justify-between">
+                                <label class="text-sm font-semibold flex-shrink-0 mr-2">${level.replace('level', '')}${level === 'level1' ? 'st' : level === 'level2' ? 'nd' : level === 'level3' ? 'rd' : 'th'} Level:</label>
+                                <div class="flex items-center flex-grow justify-end">
+                                    <button class="spell-slot-btn w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-sm flex-shrink-0 mr-1 transition duration-200" data-player-id="${player.id}" data-level="${level}" data-action="decrement">-</button>
+                                    <input type="number" value="${player.spellSlots[level].current}" data-player-id="${player.id}" data-field="spellSlots.${level}.current"
+                                           class="player-input w-10 p-1 bg-gray-600 rounded-md border border-gray-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 text-center text-sm flex-shrink-0">
+                                    <span class="mx-1 flex-shrink-0">/</span>
+                                    <input type="number" value="${player.spellSlots[level].max}" data-player-id="${player.id}" data-field="spellSlots.${level}.max"
+                                           class="player-input w-10 p-1 bg-gray-600 rounded-md border border-gray-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 text-center text-sm flex-shrink-0">
+                                    <button class="spell-slot-btn w-6 h-6 bg-green-500 hover:bg-green-600 text-white rounded-full flex items-center justify-center text-sm ml-1 flex-shrink-0 transition duration-200" data-player-id="${player.id}" data-level="${level}" data-action="increment">+</button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <!-- Magic Items Section -->
+                <div class="mt-4 border-t border-gray-600 pt-4">
+                    <h3 class="text-xl font-semibold mb-3 text-indigo-200">Magic Items</h3>
+                    <div id="magic-items-list-${player.id}" class="space-y-2 mb-3">
+                        ${magicItemsHtml}
+                    </div>
+                    <button class="add-magic-item-btn w-full py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-lg shadow-md transition duration-200 text-sm" data-player-id="${player.id}">
+                        Add Magic Item
+                    </button>
+                </div>
+            `;
+            return playerCard;
+        };
+
+        const addPlayer = () => {
+            const newPlayer = {
+                id: generateId(),
+                name: `New Player ${appData.players.length + 1}`,
+                stats: { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 },
+                hp: { current: 20, max: 20 },
+                ac: 10,
+                initiative: 0,
+                speed: 30,
+                currency: { cp: 0, sp: 0, gp: 0 }, // New currency field
+                spellSlots: {
+                    level1: { current: 0, max: 0 }, level2: { current: 0, max: 0 },
+                    level3: { current: 0, max: 0 }, level4: { current: 0, max: 0 },
+                    level5: { current: 0, max: 0 }, level6: { current: 0, max: 0 },
+                    level7: { current: 0, max: 0 }, level8: { current: 0, max: 0 },
+                    level9: { current: 0, max: 0 },
+                },
+                magicItems: [] // New magic items array
+            };
+            appData.players.push(newPlayer);
+            saveData();
+            renderPlayers();
+        };
+
+        const updatePlayer = (playerId, field, value) => {
+            const playerIndex = appData.players.findIndex(p => p.id === playerId);
+            if (playerIndex > -1) {
+                const parts = field.split('.');
+                let current = appData.players[playerIndex];
+                for (let i = 0; i < parts.length - 1; i++) {
+                    if (!current[parts[i]]) current[parts[i]] = {}; // Create if doesn't exist
+                    current = current[parts[i]];
+                }
+                current[parts[parts.length - 1]] = value;
+                saveData();
+            }
+        };
+
+        const addMagicItem = (playerId) => {
+            const player = appData.players.find(p => p.id === playerId);
+            if (player) {
+                const newItem = {
+                    id: generateId(),
+                    name: "New Magic Item",
+                    description: "A description of your new magic item."
+                };
+                player.magicItems.push(newItem);
+                saveData();
+                renderPlayers(); // Re-render to show the new item
+            }
+        };
+
+        const updateMagicItem = (playerId, itemId, field, value) => {
+            const player = appData.players.find(p => p.id === playerId);
+            if (player) {
+                const item = player.magicItems.find(i => i.id === itemId);
+                if (item) {
+                    item[field] = value;
+                    saveData();
+                }
+            }
+        };
+
+        const removeMagicItem = (playerId, itemId) => {
+            const player = appData.players.find(p => p.id === playerId);
+            if (player) {
+                player.magicItems = player.magicItems.filter(item => item.id !== itemId);
+                saveData();
+                renderPlayers(); // Re-render to remove the item
+            }
+        };
+
+
+        const removePlayer = (playerId) => {
+            appData.players = appData.players.filter(p => p.id !== playerId);
+            saveData();
+            renderPlayers();
+        };
+
+        const renderPlayers = () => {
+            playersContainer.innerHTML = '';
+            appData.players.forEach(player => {
+                playersContainer.appendChild(createPlayerCard(player));
+            });
+        };
+
+        // --- Dice Roller Logic ---
+        const diceResults = document.getElementById('dice-results');
+        const customDiceInput = document.getElementById('custom-dice-input');
+        const rollCustomBtn = document.getElementById('roll-custom-btn');
+
+        const rollDice = (diceType) => {
+            let result;
+            switch (diceType) {
+                case 'd4': result = Math.floor(Math.random() * 4) + 1; break;
+                case 'd6': result = Math.floor(Math.random() * 6) + 1; break;
+                case 'd8': result = Math.floor(Math.random() * 8) + 1; break;
+                case 'd10': result = Math.floor(Math.random() * 10) + 1; break;
+                case 'd12': result = Math.floor(Math.random() * 12) + 1; break;
+                case 'd20': result = Math.floor(Math.random() * 20) + 1; break;
+                case 'd100': result = Math.floor(Math.random() * 100) + 1; break;
+                default: result = 0;
+            }
+            return result;
+        };
+
+        const parseAndRollCustomDice = (input) => {
+            const match = input.toLowerCase().match(/^(\d*)d(\d+)([+-]\d+)?$/);
+            if (!match) {
+                diceResults.textContent = 'Invalid format. Use like: 2d6+3 or d20';
+                return;
+            }
+
+            const numDice = parseInt(match[1] || '1', 10);
+            const diceSides = parseInt(match[2], 10);
+            const modifier = parseInt(match[3] || '0', 10);
+
+            if (isNaN(numDice) || isNaN(diceSides) || isNaN(modifier) || numDice <= 0 || diceSides <= 0) {
+                diceResults.textContent = 'Invalid numbers in dice roll.';
+                return;
+            }
+
+            let total = 0;
+            let rolls = [];
+            for (let i = 0; i < numDice; i++) {
+                const roll = Math.floor(Math.random() * diceSides) + 1;
+                rolls.push(roll);
+                total += roll;
+            }
+
+            const finalResult = total + modifier;
+            let resultText = `Rolling ${input}: `;
+            if (numDice > 1) {
+                resultText += `Rolls (${rolls.join(' + ')})`;
+                if (modifier !== 0) {
+                    resultText += ` ${modifier > 0 ? '+' : ''}${modifier}`;
+                }
+                resultText += ` = ${finalResult}`;
+            } else {
+                resultText += `${finalResult}`;
+            }
+            diceResults.textContent = resultText;
+        };
+
+        // --- Enemy HP Tracker Logic ---
+        const enemiesContainer = document.getElementById('enemies-container');
+        const addEnemyBtn = document.getElementById('add-enemy-btn');
+
+        const createEnemyCard = (enemy) => {
+            const enemyCard = document.createElement('div');
+            enemyCard.id = `enemy-${enemy.id}`;
+            enemyCard.className = 'bg-gray-700 p-6 rounded-lg shadow-lg border border-gray-600 flex flex-col space-y-4';
+
+            enemyCard.innerHTML = `
+                <div class="flex items-center justify-between mb-4">
+                    <input type="text" value="${enemy.name}" data-enemy-id="${enemy.id}" data-field="name"
+                           class="enemy-name-input text-2xl font-bold bg-transparent border-b border-gray-500 pb-1 focus:outline-none focus:border-red-400 w-full mr-2"
+                           placeholder="Enemy Name">
+                    <button class="remove-enemy-btn text-red-400 hover:text-red-500 text-lg font-bold transition duration-200" data-enemy-id="${enemy.id}">
+                        &times;
+                    </button>
+                </div>
+
+                <div class="flex items-center justify-between">
+                    <label class="text-sm font-semibold flex-shrink-0 mr-2">HP:</label>
+                    <div class="flex items-center flex-grow justify-end">
+                        <button class="enemy-hp-btn w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-lg flex-shrink-0 mr-2 transition duration-200" data-enemy-id="${enemy.id}" data-action="decrement">-</button>
+                        <input type="number" value="${enemy.hp}" data-enemy-id="${enemy.id}" data-field="hp"
+                               class="enemy-input w-20 p-2 bg-gray-600 rounded-md border border-gray-500 focus:outline-none focus:ring-1 focus:ring-red-500 text-center text-lg flex-shrink-0">
+                        <button class="enemy-hp-btn w-8 h-8 bg-green-500 hover:bg-green-600 text-white rounded-full flex items-center justify-center text-lg ml-2 flex-shrink-0 transition duration-200" data-enemy-id="${enemy.id}" data-action="increment">+</button>
+                    </div>
+                </div>
+            `;
+            return enemyCard;
+        };
+
+        const addEnemy = () => {
+            const newEnemy = {
+                id: generateId(),
+                name: `New Enemy ${appData.enemies.length + 1}`,
+                hp: 10
+            };
+            appData.enemies.push(newEnemy);
+            saveData();
+            renderEnemies();
+        };
+
+        const updateEnemy = (enemyId, field, value) => {
+            const enemyIndex = appData.enemies.findIndex(e => e.id === enemyId);
+            if (enemyIndex > -1) {
+                const parts = field.split('.');
+                let current = appData.enemies[enemyIndex];
+                for (let i = 0; i < parts.length - 1; i++) {
+                    if (!current[parts[i]]) current[parts[i]] = {};
+                    current = current[parts[i]];
+                }
+                current[parts[parts.length - 1]] = value;
+                saveData();
+            }
+        };
+
+        const removeEnemy = (enemyId) => {
+            appData.enemies = appData.enemies.filter(e => e.id !== enemyId);
+            saveData();
+            renderEnemies();
+        };
+
+        const renderEnemies = () => {
+            enemiesContainer.innerHTML = '';
+            appData.enemies.forEach(enemy => {
+                enemiesContainer.appendChild(createEnemyCard(enemy));
+            });
+        };
+
+        // --- Consolidated Event Listeners ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize homepage view
+            showSection('homepage');
+
+            // --- Encounter Generator Event Listeners ---
+            if (generateBtn) {
+                generateBtn.addEventListener('click', generateEncounter);
+            }
+            if (playerLevelInput) {
+                playerLevelInput.addEventListener('input', generateEncounter);
+            }
+            if (partySizeInput) {
+                partySizeInput.addEventListener('input', generateEncounter);
+            }
+            if (closeMessageBtn) {
+                closeMessageBtn.addEventListener('click', hideMessage);
+            }
+
+            // Generate an initial encounter on page load if the section is visible
+            // This will be called when the user navigates to the encounter generator for the first time
+            // Or if they refresh on that page.
+            if (document.getElementById('encounter-generator') && !document.getElementById('encounter-generator').classList.contains('hidden')) {
+                 generateEncounter();
+            }
+
+
+            // --- Player Stat Tracker & Enemy HP Tracker Event Listeners ---
+            loadData();
+            renderPlayers();
+            renderEnemies();
+
+            // Player section event delegation
+            playersContainer.addEventListener('input', (event) => {
+                const target = event.target;
+                const playerId = target.dataset.playerId;
+                const field = target.dataset.field;
+                const itemId = target.dataset.itemId; // For magic items
+
+                if (playerId && field) {
+                    let value = target.value;
+                    if (target.type === 'number') {
+                        value = parseInt(value, 10) || 0; // Ensure number, default to 0
+                    }
+
+                    if (itemId) { // Handle magic item updates
+                        updateMagicItem(playerId, itemId, field, value);
+                    } else { // Handle regular player stat updates
+                        updatePlayer(playerId, field, value);
+                    }
+                }
+            });
+
+            playersContainer.addEventListener('click', (event) => {
+                const target = event.target;
+                const playerId = target.dataset.playerId;
+                const itemId = target.dataset.itemId;
+
+                if (target.classList.contains('remove-player-btn')) {
+                    if (playerId) {
+                        removePlayer(playerId);
+                    }
+                } else if (target.classList.contains('spell-slot-btn')) {
+                    const level = target.dataset.level;
+                    const action = target.dataset.action;
+                    if (playerId && level && action) {
+                        const player = appData.players.find(p => p.id === playerId);
+                        if (player) {
+                            if (action === 'increment') {
+                                if (player.spellSlots[level].current < player.spellSlots[level].max) {
+                                    player.spellSlots[level].current++;
+                                }
+                            } else if (action === 'decrement') {
+                                if (player.spellSlots[level].current > 0) {
+                                    player.spellSlots[level].current--;
+                                }
+                            }
+                            saveData();
+                            renderPlayers(); // Re-render to update the display
+                        }
+                    }
+                } else if (target.classList.contains('add-magic-item-btn')) {
+                    if (playerId) {
+                        addMagicItem(playerId);
+                    }
+                } else if (target.classList.contains('remove-magic-item-btn')) {
+                    if (playerId && itemId) {
+                        removeMagicItem(playerId, itemId);
+                    }
+                }
+            });
+
+            addPlayerBtn.addEventListener('click', addPlayer);
+
+            // Dice roller event listeners
+            document.querySelectorAll('.dice-btn').forEach(button => {
+                button.addEventListener('click', (event) => {
+                    const diceType = event.target.dataset.dice;
+                    const result = rollDice(diceType);
+                    diceResults.textContent = `Rolled ${diceType}: ${result}`;
+                });
+            });
+
+            rollCustomBtn.addEventListener('click', () => {
+                parseAndRollCustomDice(customDiceInput.value);
+            });
+
+            customDiceInput.addEventListener('keypress', (event) => {
+                if (event.key === 'Enter') {
+                    parseAndRollCustomDice(customDiceInput.value);
+                }
+            });
+
+            // Enemy section event delegation
+            enemiesContainer.addEventListener('input', (event) => {
+                const target = event.target;
+                const enemyId = target.dataset.enemyId;
+                const field = target.dataset.field;
+                if (enemyId && field) {
+                    let value = target.value;
+                    if (target.type === 'number') {
+                        value = parseInt(value, 10) || 0;
+                    }
+                    updateEnemy(enemyId, field, value);
+                }
+            });
+
+            enemiesContainer.addEventListener('click', (event) => {
+                const target = event.target;
+                if (target.classList.contains('remove-enemy-btn')) {
+                    const enemyId = target.dataset.enemyId;
+                    if (enemyId) {
+                        removeEnemy(enemyId);
+                    }
+                } else if (target.classList.contains('enemy-hp-btn')) {
+                    const enemyId = target.dataset.enemyId;
+                    const action = target.dataset.action;
+                    if (enemyId && action) {
+                        const enemy = appData.enemies.find(e => e.id === enemyId);
+                        if (enemy) {
+                            const hpInput = document.querySelector(`#enemy-${enemyId} input[data-field="hp"]`);
+                            if (hpInput) {
+                                let currentHp = parseInt(hpInput.value, 10);
+                                if (action === 'increment') {
+                                    currentHp++;
+                                } else if (action === 'decrement') {
+                                    currentHp--;
+                                }
+                                hpInput.value = currentHp; // Update input field
+                                updateEnemy(enemyId, 'hp', currentHp); // Update data
+                            }
+                        }
+                    }
+                }
+            });
+
+            addEnemyBtn.addEventListener('click', addEnemy);
+        });
+    </script>
+</body>
+</html>
